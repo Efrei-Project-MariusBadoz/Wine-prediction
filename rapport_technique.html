@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport Technique : Classification de la Qualité du Vin</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 22mm 20mm 22mm 20mm;
+            @bottom-right {
+                content: counter(page);
+            }
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, 'DejaVu Serif', serif;
+            font-size: 11pt;
+            line-height: 1.55;
+            color: #1e293b;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Headers */
+        h1 {
+            font-size: 20pt;
+            color: #1b365d;
+            border-bottom: 2px solid #1b365d;
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-weight: bold;
+            line-height: 1.25;
+        }
+        
+        h2 {
+            font-size: 14pt;
+            color: #1b365d;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 5px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            page-break-after: avoid;
+            font-weight: bold;
+        }
+        
+        h3 {
+            font-size: 12pt;
+            color: #6b2d5c;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+            font-weight: bold;
+        }
+        
+        p {
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin-top: 0;
+            margin-bottom: 12px;
+            padding-left: 24px;
+        }
+        
+        li {
+            margin-bottom: 4px;
+        }
+        
+        /* Header Meta Block */
+        p:has(strong:first-child) {
+            line-height: 1.6;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 20px 0;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0;
+            page-break-inside: avoid;
+            font-size: 10pt;
+        }
+        
+        th {
+            background-color: #1b365d;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px 10px;
+            border: 1px solid #1b365d;
+        }
+        
+        td {
+            padding: 7px 10px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+        }
+        
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        /* Inline code */
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 9.5pt;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 1px 4px;
+            border-radius: 3px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        strong {
+            color: #0f172a;
+        }
+        
+        /* Print rules */
+        @media print {
+            body {
+                font-size: 10.5pt;
+            }
+            h2, h3 {
+                page-break-after: avoid;
+            }
+            table, tr, td, th {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+<h1>Rapport Technique : Classification de la Qualité du Vin par Apprentissage Supervisé</h1>
+<p><strong>Auteur :</strong> Marius BADOZ<br />
+<strong>Projet :</strong> Machine Learning 1 (ING2-BDML)<br />
+<strong>Établissement :</strong> EFREI Paris Panthéon-Assas Université<br />
+<strong>Année académique :</strong> 2026-2027<br />
+<strong>Enseignants référents :</strong> Ahmad TAY, Ahmed-Ghazi BLAIECH, Hassan SHRAIM</p>
+<hr />
+<h2>1. Contexte et Formulation du Problème</h2>
+<p>L'évaluation de la qualité d'un vin repose traditionnellement sur des jurys d'experts lors de dégustations sensorielles à l'aveugle. Ce procédé présente deux limites pratiques : un coût humain important et une part de subjectivité liée aux dégustateurs. L'objectif de ce projet consiste à concevoir et comparer des algorithmes d'apprentissage supervisé capables de prédire la qualité d'un vin à partir de ses seules mesures physico-chimiques objectives.</p>
+<p>Le jeu de données utilisé provient de la base de référence de l'UCI (<em>Wine Quality Dataset</em>, Paulo Cortez et al., 2009). Il rassemble 6 497 vins portugais issus de l'appellation d'origine contrôlée <em>Vinho Verde</em> (1 599 vins rouges et 4 898 vins blancs). Chaque échantillon dispose de 11 descripteurs physico-chimiques continus et d'une note sensorielle globale comprise entre 0 et 10, attribuée par la médiane d'au moins trois experts.</p>
+<p>Conformément au cahier des charges, nous formulons la tâche sous forme d'une classification binaire :</p>
+<ul>
+<li>Classe 1 (<em>Bon vin</em>) : Note de qualité supérieure ou égale à 7.</li>
+<li>Classe 0 (<em>Vin ordinaire</em>) : Note de qualité strictement inférieure à 7.</li>
+</ul>
+<hr />
+<h2>2. Analyse Exploratoire et Préparation des Données</h2>
+<h3>2.1 Contrôle d'intégrité et valeurs manquantes</h3>
+<p>Le jeu de données ne présente aucune valeur manquante (<code>df.isna().sum() == 0</code>). Les 6 497 observations sont immédiatement exploitables.</p>
+<h3>2.2 Encodage de la variable catégorielle</h3>
+<p>Le dataset fusionne deux sous-ensembles : le vin rouge et le vin blanc. Nous avons introduit une variable indicatrice <code>color</code> définie par 1 pour le vin rouge et 0 pour le vin blanc (<code>wine_quality.data.original[&quot;color&quot;].map({&quot;red&quot;: 1, &quot;white&quot;: 0})</code>).</p>
+<h3>2.3 Échelles de mesure et valeurs aberrantes</h3>
+<p>L'analyse descriptive révèle de forts écarts d'échelle entre les descripteurs :</p>
+<ul>
+<li>Le dioxyde de soufre total (<code>total_sulfur_dioxide</code>) affiche une moyenne de 115.75 mg/L avec un maximum à 440 mg/L.</li>
+<li>Le chlorure de sodium (<code>chlorides</code>) présente une moyenne de 0.056 g/L.</li>
+</ul>
+<p>L'application de la méthode de l'écart interquartile (IQR avec seuils à $Q1 - 1.5 	imes IQR$ et $Q3 + 1.5 	imes IQR$) détecte des valeurs extrêmes, notamment sur l'acidité volatile (5.80% d'outliers), le sucre résiduel (4.56%) et les chlorures (4.40%).</p>
+<p>Ces valeurs correspondent à des profils biologiques réels (comme les vins doux à forte teneur en sucre ou des cuvées spécifiques) et non à des erreurs de capteurs. Nous avons fait le choix méthodologique de conserver l'intégralité de ces points pour éviter de biaiser la distribution réelle de la production viticole.</p>
+<h3>2.4 Traitement des doublons</h3>
+<p>Le dataset compte 1 177 lignes en doublon strict (mêmes paramètres chimiques et même note finale). Nous avons vérifié qu'aucun profil chimique identique n'affiche de note divergente. Ces observations proviennent de prélèvements distincts au sein de mêmes cuves de vinification certifiées par la commission viticole. Conformément à la publication de référence de Cortez et al., ces échantillons sont conservés.</p>
+<h3>2.5 Déséquilibre des classes</h3>
+<p>La distribution de la cible montre une forte asymétrie :</p>
+<ul>
+<li>Classe 0 (Vins ordinaires, notes de 3 à 6) : 5 220 échantillons (80.34%).</li>
+<li>Classe 1 (Bons vins, notes de 7 à 9) : 1 277 échantillons (19.66%).</li>
+</ul>
+<p>Ce ratio d'environ 4 contre 1 interdit l'usage de la précision globale (<em>Accuracy</em>) comme critère d'optimisation principal. Un classifieur naïf prédisant systématiquement la classe 0 afficherait 80.3% de bonnes réponses sans jamais identifier aucun vin d'exception. Nous orientons notre évaluation sur le Rappel, la Précision, le F1-score et l'aire sous la courbe ROC (AUC).</p>
+<hr />
+<h2>3. Analyse des Corrélations et Distributions</h2>
+<h3>3.1 Corrélations linéaires (Matrice de Pearson)</h3>
+<p>Le calcul de la matrice de corrélation met en avant quatre relations majeures avec la qualité :</p>
+<ol>
+<li><code>alcohol</code> (<em>r</em> = +0.39) : Principal facteur associé positivement à une note élevée.</li>
+<li><code>density</code> (<em>r</em> = −0.27) : Facteur corrélé négativement avec la note.</li>
+<li><code>volatile_acidity</code> (<em>r</em> = −0.23) : L'acide acétique apporte un goût aigre de vinaigre, dégradant la note.</li>
+<li><code>chlorides</code> (<em>r</em> = −0.20) : Une concentration élevée en sel nuit à la finesse du vin.</li>
+</ol>
+<p>Entre variables explicatives, nous observons une forte corrélation négative entre l'alcool et la densité (<em>r</em> = −0.69). L'éthanol ayant une densité inférieure à l'eau (0.789 g/cm³), un vin plus alcoolisé est naturellement moins dense.</p>
+<h3>3.2 Visualisation par Boxplots et Séparabilité</h3>
+<p>La comparaison des distributions par boxplots confirme ces constats : la médiane du taux d'alcool des bons vins se situe à 11.5%, contre 10.0% pour les vins ordinaires.</p>
+<p>Néanmoins, les boîtes et moustaches des deux classes se chevauchent sur chaque variable prise individuellement. Pour un taux d'alcool donné (par exemple 11.0%), on trouve à la fois des vins ordinaires et des bons vins. Ce chevauchement partiel montre qu'un seuil simple ou un hyperplan rigide ne peut pas séparer proprement les deux groupes, justifiant l'emploi de modèles non-linéaires.</p>
+<hr />
+<h2>4. Sélection des Variables : Justification du Choix des 8 Descripteurs</h2>
+<p>L'analyse exploratoire initiale suggérait de ne retenir que les 4 variables les plus fortement corrélées. Pour valider ou infirmer cette réduction, nous avons confronté l'analyse linéaire aux critères de l'Analyse en Composantes Principales (ACP) et de l'Information Mutuelle (MI).</p>
+<h3>4.1 Test F d'ANOVA univarié</h3>
+<p>Le test <em>F</em> mesure le rapport entre la variance inter-classes et la variance intra-classe. Il confirme la hiérarchie observée sur les corrélations linéaires :</p>
+<ul>
+<li><code>alcohol</code> : $F = 907.4$ (<em>p</em> &lt; 10<sup>−100</sup>)</li>
+<li><code>density</code> : $F = 373.1$ (<em>p</em> &lt; 10<sup>−78</sup>)</li>
+<li><code>volatile_acidity</code> : $F = 299.8$ (<em>p</em> &lt; 10<sup>−64</sup>)</li>
+<li><code>chlorides</code> : $F = 210.5$ (<em>p</em> &lt; 10<sup>−46</sup>)</li>
+<li>Variables secondaires : de $F = 44.1$ (<code>total_sulfur_dioxide</code>) à $F = 0.8$ (<code>pH</code>).</li>
+</ul>
+<h3>4.2 Le seuil de 90% de variance par l'ACP</h3>
+<p>L'Analyse en Composantes Principales appliquée sur les variables centrées-réduites fournit la variance cumulée selon le nombre d'axes :</p>
+<ul>
+<li>1 composante : 31.8%</li>
+<li>4 composantes : 74.1% (perte critique de 25.9% de l'information physico-chimique)</li>
+<li>6 composantes : 85.2%</li>
+<li><strong>8 composantes : 93.8% (franchissement net du seuil standard de 90%)</strong></li>
+<li>12 composantes : 100.0%</li>
+</ul>
+<p>Ce résultat démontre mathématiquement que limiter la modélisation à 4 variables élimine plus d'un quart de l'information totale du jeu de données. Retenir 8 composantes permet d'atteindre 93.8% de variance expliquée.</p>
+<h3>4.3 Dépendances non-linéaires par l'Information Mutuelle</h3>
+<p>La corrélation de Pearson ne quantifie que les relations strictement en ligne droite. L'Information Mutuelle évalue la réduction d'entropie globale, englobant les effets non-linéaires et les relations en cloche.
+Sur le jeu d'apprentissage, le classement s'établit ainsi :</p>
+<ol>
+<li><code>alcohol</code> : 0.0924</li>
+<li><code>density</code> : 0.0848</li>
+<li><code>total_sulfur_dioxide</code> : 0.0422</li>
+<li><code>chlorides</code> : 0.0382</li>
+<li><code>citric_acid</code> : 0.0234</li>
+<li><code>residual_sugar</code> : 0.0228</li>
+<li><code>volatile_acidity</code> : 0.0209</li>
+<li><code>free_sulfur_dioxide</code> : 0.0137</li>
+<li><code>sulphates</code> : 0.0106</li>
+<li><code>pH</code> : 0.0053</li>
+<li><code>fixed_acidity</code> : 0.0015</li>
+<li><code>color</code> : 0.0000</li>
+</ol>
+<p>L'Information Mutuelle met en lumière des descripteurs essentiels complètement sous-évalués par l'analyse linéaire : le dioxyde de soufre total, l'acide citrique et le sucre résiduel. À l'inverse, les 4 dernières variables (<code>sulphates</code>, <code>pH</code>, <code>fixed_acidity</code>, <code>color</code>) affichent un apport d'information quasi-nul.</p>
+<h3>4.4 Synthèse et arbitrage de la sélection</h3>
+<p>En croisant le seuil de 90% de l'ACP et l'Information Mutuelle, nous retenons un ensemble optimal de <strong>8 descripteurs</strong> :
+<code>alcohol</code>, <code>density</code>, <code>total_sulfur_dioxide</code>, <code>chlorides</code>, <code>citric_acid</code>, <code>residual_sugar</code>, <code>volatile_acidity</code>, <code>free_sulfur_dioxide</code>.</p>
+<p>Ce sous-ensemble conserve 93.8% de la variance, intègre les signaux non-linéaires majeurs et écarte les 4 variables parasites qui perturbaient le calcul des distances géométriques.</p>
+<hr />
+<h2>5. Modélisation et Comparaison des Algorithmes (Pipeline 8 Variables)</h2>
+<h3>5.1 Protocole expérimental</h3>
+<p>Les données sont découpées avec <code>train_test_split</code> :</p>
+<ul>
+<li>80% en apprentissage (<em>N</em> = 5 197)</li>
+<li>20% en test indépendant (<em>N</em> = 1 300)</li>
+<li>Stratification sur la variable cible (<code>stratify=y_data</code>) pour maintenir la proportion exacte de 19.66% de bons vins dans les deux ensembles.</li>
+<li>Normalisation par <code>StandardScaler</code> ajusté sur les 8 variables d'apprentissage puis appliqué sur l'ensemble de test, évitant tout risque de fuite de données (<em>data leakage</em>).</li>
+</ul>
+<h3>5.2 Propriétés théoriques des cinq modèles étudiés</h3>
+<ol>
+<li><strong>Régression Logistique :</strong> Modèle linéaire paramétrique. Il calcule une combinaison linéaire <em>z = w<sup>T</sup>x + b</em> transformée par la fonction sigmoïde <em>σ(z) = 1 / (1 + e<sup>−z</sup>)</em>. Sa frontière est un hyperplan rigide.</li>
+<li><strong>k-NN (k Plus Proches Voisins) :</strong> Méthode non-paramétrique géométrique. Aucune fonction explicite n'est apprise pendant l'entraînement. Lors du test, l'algorithme calcule les distances dans l'espace à 8 dimensions et effectue un vote parmi les <em>k</em> plus proches voisins.</li>
+<li><strong>Arbre de Décision (CART) :</strong> Modèle non-linéaire partitionnant l'espace de manière récursive avec des coupures orthogonales aux axes. Critère de séparation fixé sur l'entropie, profondeur maximale limitée à 5 pour restreindre le surapprentissage.</li>
+<li><strong>Naive Bayes Gaussien :</strong> Classifieur probabiliste appliquant le théorème de Bayes sous l'hypothèse d'indépendance conditionnelle des descripteurs sachant la classe.</li>
+<li><strong>Support Vector Machine (SVM) :</strong> Recherche l'hyperplan séparateur garantissant la marge géométrique maximale entre les vecteurs de support. L'emploi d'un noyau gaussien RBF (<em>Radial Basis Function</em>) projette implicitement les observations dans un espace de dimension supérieure.</li>
+</ol>
+<h3>5.3 Résultats des modèles de base (Test set, N = 1 300, 8 variables)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Modèle</th>
+<th style="text-align:center">Accuracy</th>
+<th style="text-align:center">Précision</th>
+<th style="text-align:center">Rappel</th>
+<th style="text-align:center">F1-score</th>
+<th style="text-align:center">ROC-AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Régression Logistique</td>
+<td style="text-align:center">0.819</td>
+<td style="text-align:center">0.598</td>
+<td style="text-align:center">0.238</td>
+<td style="text-align:center">0.341</td>
+<td style="text-align:center">0.790</td>
+</tr>
+<tr>
+<td style="text-align:left">k-NN (k=5, uniforme)</td>
+<td style="text-align:center">0.829</td>
+<td style="text-align:center">0.576</td>
+<td style="text-align:center">0.504</td>
+<td style="text-align:center">0.538</td>
+<td style="text-align:center">0.826</td>
+</tr>
+<tr>
+<td style="text-align:left">Arbre de Décision (p=5, entropie)</td>
+<td style="text-align:center">0.825</td>
+<td style="text-align:center">0.605</td>
+<td style="text-align:center">0.316</td>
+<td style="text-align:center">0.415</td>
+<td style="text-align:center">0.813</td>
+</tr>
+<tr>
+<td style="text-align:left">Naive Bayes Gaussien</td>
+<td style="text-align:center">0.752</td>
+<td style="text-align:center">0.414</td>
+<td style="text-align:center">0.629</td>
+<td style="text-align:center">0.499</td>
+<td style="text-align:center">0.755</td>
+</tr>
+<tr>
+<td style="text-align:left">SVM (noyau RBF initial)</td>
+<td style="text-align:center">0.823</td>
+<td style="text-align:center">0.658</td>
+<td style="text-align:center">0.211</td>
+<td style="text-align:center">0.320</td>
+<td style="text-align:center">0.799</td>
+</tr>
+</tbody>
+</table>
+<h3>5.4 Analyse critique des résultats initiaux</h3>
+<ul>
+<li>La Régression Logistique et le SVM de base favorisent la classe majoritaire en raison de la rigidité de leur frontière initiale : ils obtiennent un rappel très bas (23.8% et 21.1%), laissant passer les trois quarts des bons vins.</li>
+<li>Naive Bayes présente le rappel initial le plus haut (62.9%), mais sa précision reste médiocre à 41.4% en raison des corrélations résiduelles violant l'hypothèse d'indépendance.</li>
+<li>k-NN s'avère le plus performant et équilibré dès sa version initiale : il combine le meilleur F1-score (0.538) et un rappel supérieur à 50%.</li>
+</ul>
+<hr />
+<h2>6. Optimisation des Hyperparamètres</h2>
+<p>Nous avons sélectionné les deux familles d'algorithmes présentant le plus fort potentiel d'adaptation non-linéaire : le k-NN et le SVM.</p>
+<h3>6.1 Optimisation du k-NN par GridSearchCV</h3>
+<p>Une recherche exhaustive sur grille avec validation croisée stratifiée à 5 plis (<code>cv=5</code>, métrique d'optimisation <code>scoring=&quot;f1&quot;</code>) a testé les combinaisons suivantes :</p>
+<ul>
+<li><code>n_neighbors</code> : [3, 5, 7, 9, 11]</li>
+<li><code>weights</code> : ['uniform', 'distance']</li>
+<li><code>metric</code> : ['euclidean', 'manhattan']</li>
+</ul>
+<p>Le meilleur estimateur sélectionné sur 8 variables est :</p>
+<ul>
+<li><code>n_neighbors = 7</code></li>
+<li><code>weights = 'distance'</code></li>
+<li><code>metric = 'euclidean'</code></li>
+</ul>
+<p>Le passage au vote pondéré par l'inverse de la distance (<em>w<sub>i</sub> = 1 / d</em>) apporte un gain déterminant : au lieu d'accorder une voix égale à chaque voisin, un voisin très proche chimiquement influence bien plus la décision qu'un voisin situé en périphérie de voisinage.</p>
+<h3>6.2 Optimisation du SVM par RandomizedSearchCV</h3>
+<p>Une recherche aléatoire sur 10 itérations avec validation croisée à 5 plis a exploré les paramètres suivants :</p>
+<ul>
+<li><code>C</code> : [0.1, 1, 5, 10, 20]</li>
+<li><code>gamma</code> : ['scale', 'auto', 0.01, 0.05, 0.1]</li>
+</ul>
+<p>La meilleure configuration retenue est <em>C</em> = 10 avec $\gamma = 	ext{'auto'}$. L'augmentation du paramètre de régularisation <em>C</em> pénalise plus sévèrement les erreurs de classification de la classe minoritaire, remontant le rappel de 21.1% à 29.3%.</p>
+<h3>6.3 Comparatif final après optimisation (8 variables)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Modèle Optimisé</th>
+<th style="text-align:center">Accuracy</th>
+<th style="text-align:center">Précision</th>
+<th style="text-align:center">Rappel</th>
+<th style="text-align:center">F1-score</th>
+<th style="text-align:center">ROC-AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">SVM Optimisé ($C=10, \gamma=	ext{auto}$)</td>
+<td style="text-align:center">0.827</td>
+<td style="text-align:center">0.630</td>
+<td style="text-align:center">0.293</td>
+<td style="text-align:center">0.400</td>
+<td style="text-align:center">0.820</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>k-NN Optimisé ($k=7, 	ext{distance}$)</strong></td>
+<td style="text-align:center"><strong>0.867</strong></td>
+<td style="text-align:center"><strong>0.683</strong></td>
+<td style="text-align:center"><strong>0.605</strong></td>
+<td style="text-align:center"><strong>0.642</strong></td>
+<td style="text-align:center"><strong>0.890</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Le modèle k-NN optimisé surclasse très largement le SVM sur l'ensemble des indicateurs.</p>
+<h3>6.4 Matrice de confusion du k-NN retenu (<em>N</em> = 1 300)</h3>
+<ul>
+<li>Vrais Négatifs (Vins ordinaires correctement détectés) : <strong>972</strong></li>
+<li>Faux Positifs (Vins ordinaires pris à tort pour de bons vins) : <strong>72</strong></li>
+<li>Faux Négatifs (Bons vins manqués) : <strong>101</strong></li>
+<li>Vrais Positifs (Bons vins correctement détectés) : <strong>155</strong></li>
+</ul>
+<p>La précision atteint 68.3% ($155 / (155 + 72)$) et le rappel s'établit à 60.55% ($155 / (155 + 101)$), avec une aire sous la courbe ROC de 0.890.</p>
+<hr />
+<h2>7. Déploiement et Livrables Bonus</h2>
+<p>Conformément à la section 2.5 du sujet, la solution a été industrialisée selon les standards du génie logiciel :</p>
+<ol>
+<li><strong>Sérialisation des modèles :</strong><br />
+Le modèle k-NN optimisé et son objet de normalisation ont été persistés sous forme de fichiers binaires à l'aide de la bibliothèque <code>joblib</code> (<code>best_knn_model.joblib</code> et <code>scaler.joblib</code>) sur la base des 8 variables.</li>
+<li><strong>Tests unitaires automatisés (<code>pytest</code>) :</strong><br />
+Le fichier <code>tests/test_model.py</code> intègre quatre tests automatisés :
+<ul>
+<li>Vérification de la présence physique des fichiers d'artefacts.</li>
+<li>Contrôle du bon chargement et de la dimension attendue (8 descripteurs).</li>
+<li>Validation de la cohérence des prédictions (format binaire 0 ou 1, somme des probabilités égale à 1.0).</li>
+<li>Gestion des erreurs lors d'un apport incomplet de variables.</li>
+</ul>
+</li>
+<li><strong>Application web interactive (<code>Streamlit</code>) :</strong><br />
+L'interface <code>app.py</code> propose 8 curseurs ajustables pour renseigner la composition chimique d'un vin et fournit instantanément la décision de classification accompagnée de la jauge de probabilité.</li>
+<li><strong>Conteneurisation (<code>Docker</code>) :</strong><br />
+Le <code>Dockerfile</code> et le fichier <code>docker-compose.yml</code> permettent un déploiement autonome en une commande sans nécessiter l'installation préalable de l'environnement Python sur la machine hôte.</li>
+</ol>
+<hr />
+<h2>8. Conclusion</h2>
+<p>Ce projet illustre l'importance de dépasser l'analyse purement linéaire en prétraitement. L'Analyse en Composantes Principales (seuil de 90%) et l'Information Mutuelle ont permis d'isoler 8 variables prédictives clés, écartant le bruit des variables non informatives tout en réhabilitant des descripteurs non-linéaires cruciaux comme le dioxyde de soufre et l'acide citrique.</p>
+<p>Parmi les architectures comparées, le modèle des <em>k</em> plus proches voisins avec vote pondéré par l'inverse de la distance s'est imposé comme la méthode la plus performante, atteignant un F1-score de 0.642, un rappel de 60.55% et une aire sous la courbe ROC record de 0.890.</p>
+<p>Comme perspective d'amélioration, l'entraînement de méthodes d'ensemble comme <em>Random Forest</em> ou le rééchantillonnage synthétique (<em>SMOTE</em>) permettrait d'explorer un gain additionnel sur la détection des cas limites.</p>
+
+</body>
+</html>

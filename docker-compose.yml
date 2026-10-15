@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  wine-quality-app:
+    build: .
+    container_name: wine_quality_app
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
